@@ -51,7 +51,7 @@
           const item = products[barcode];
           resultDiv.innerHTML = `
             <div class="product-name">${item.name || '名称不明'}</div>
-            <div class="product-price">価格: ${item.price ? String(item.price).replace('円', '') + '円' : '未設定'}</div>
+            <div class="product-price">価格: ${item.price ? String(item.price).replace(/円/g, '').trim() + '円' : '未設定'}</div>
             <p><small>JAN: ${barcode}</small></p>
           `;
         } else {
