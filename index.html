@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>バーコード商品検索</title>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 10px; margin: 0; }
+    #interactive { width: 100%; max-width: 500px; margin: 0 auto; height: 300px; background: #000; position: relative; }
+    video { width: 100%; height: 100%; object-fit: cover; }
+    #result { margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9; }
+    .product-name { font-size: 1.4em; font-weight: bold; color: #333; }
+    .product-price { font-size: 1.2em; color: #e44061; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <h2>商品バーコードリーダー</h2>
+  <div id="interactive">
+    <video id="video"></video>
+  </div>
+  
+  <div id="result">
+    <p>カメラをバーコードにかざしてください</p>
+  </div>
+
+  <script>
+    let products = {};
+
+    // products.jsonからデータ読み込み
+    fetch('./products.json')
+      .then(response => response.json())
+      .then(data => {
+        // 配列またはオブジェクト形式に対応
+        if (Array.isArray(data)) {
+          data.forEach(item => { products[item.barcode] = item; });
+        } else {
+          products = data;
+        }
+      })
+      .catch(err => console.error('データ読込エラー:', err));
+
+    // バーコードスキャン機能
+    const codeReader = new ZXing.BrowserMultiFormatReader();
+    codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+      if (result) {
+        const barcode = result.text;
+        const resultDiv = document.getElementById('result');
+        
+        if (products[barcode]) {
+          const item = products[barcode];
+          resultDiv.innerHTML = `
+            <div class="product-name">${item.name || '名称不明'}</div>
+            <div class="product-price">価格: ${item.price ? item.price + '円' : '未設定'}</div>
+            <p><small>JAN: ${barcode}</small></p>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <p style="color: red; font-weight: bold;">未登録の商品です</p>
+            <p><small>JAN: ${barcode}</small></p>
+          `;
+        }
+      }
+    });
+  </script>
+</body>
+</html>
