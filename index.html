@@ -6,125 +6,203 @@
   <title>バーコード商品検索</title>
   <script src="https://unpkg.com/@zxing/library@latest"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 10px;
-      margin: 0;
-      background-color: #f4f4f9;
-    }
-
-    #interactive {
-      width: 100%;
-      max-width: 500px;
-      margin: 0 auto;
-      height: 280px;
-      background: #000;
-      position: relative;
+    body { font-family: sans-serif; text-align: center; padding: 10px; margin: 0; background-color: #f5f5f5; }
+    
+    /* カメラエリア */
+    #interactive { 
+      width: 100%; 
+      max-width: 500px; 
+      margin: 0 auto; 
+      height: 280px; 
+      background: #000; 
+      position: relative; 
       overflow: hidden;
+      border-radius: 12px;
+      border: 3px solid #ccc;
+      transition: border-color 0.3s ease;
+    }
+    
+    /* 読み取り成功時の枠線発光 */
+    #interactive.scan-success {
+      border-color: #28a745;
+      box-shadow: 0 0 15px rgba(40, 167, 69, 0.7);
+    }
+
+    video { width: 100%; height: 100%; object-fit: cover; }
+
+    /* バーコードガイド枠 */
+    .scan-guide {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      height: 40%;
+      border: 2px dashed rgba(255, 255, 255, 0.7);
       border-radius: 8px;
+      pointer-events: none;
+      box-sizing: border-box;
+    }
+    .scan-line {
+      position: absolute;
+      top: 50%;
+      left: 10%;
+      width: 80%;
+      height: 2px;
+      background: rgba(255, 0, 0, 0.6);
+      pointer-events: none;
     }
 
-    #video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .result-card {
+    /* 手入力エリア */
+    .manual-input-container {
       max-width: 500px;
-      margin: 20px auto;
-      padding: 15px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      text-align: left;
-    }
-
-    .result-item {
+      margin: 15px auto 0;
       display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
+      gap: 8px;
     }
-
-    .result-item:last-child {
-      border-bottom: none;
+    .manual-input-container input {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      outline: none;
     }
-
-    .label {
+    .manual-input-container button {
+      padding: 10px 18px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
       font-weight: bold;
-      color: #555;
     }
+    .manual-input-container button:active { background-color: #0056b3; }
 
-    .value {
-      color: #222;
+    /* 結果表示エリア */
+    #result { 
+      max-width: 500px; 
+      margin: 15px auto 0; 
+      padding: 15px; 
+      border: 1px solid #ddd; 
+      border-radius: 8px; 
+      background: #fff; 
+      box-sizing: border-box;
     }
+    .product-name { font-size: 1.4em; font-weight: bold; color: #333; }
+    .product-price { font-size: 1.2em; color: #e44061; margin-top: 5px; }
   </style>
 </head>
 <body>
+  <h2>商品バーコードリーダー</h2>
 
-  <h2>バーコード商品検索</h2>
-
+  <!-- カメラエリア -->
   <div id="interactive">
-    <video id="video"></video>
+    <video id="video" playsinline></video>
+    <div class="scan-guide"></div>
+    <div class="scan-line"></div>
   </div>
 
-  <div class="result-card">
-    <div class="result-item">
-      <span class="label">JANコード</span>
-      <span class="value" id="res-jan">-</span>
-    </div>
-    <div class="result-item">
-      <span class="label">商品名</span>
-      <span class="value" id="res-name">-</span>
-    </div>
-    <div class="result-item">
-      <span class="label">税込単価</span>
-      <span class="value" id="res-price">-</span>
-    </div>
-    <div class="result-item">
-      <span class="label">マスタ価格</span>
-      <span class="value" id="res-master-price">-</span>
-    </div>
+  <!-- ① 手入力機能（テンキー自動起動） -->
+  <div class="manual-input-container">
+    <input type="number" id="manualBarcode" placeholder="JANコードを直接入力" inputmode="numeric">
+    <button onclick="searchManualBarcode()">検索</button>
+  </div>
+  
+  <!-- 結果表示 -->
+  <div id="result">
+    <p>ガイド枠の中にバーコードを合わせてください</p>
   </div>
 
   <script>
-    let products = [];
+    let products = {};
+    let isPaused = false;
+    const videoElement = document.getElementById('video');
+    const interactiveDiv = document.getElementById('interactive');
+    const resultDiv = document.getElementById('result');
 
-    // products.json の読み込み
-    fetch('products.json')
+    // products.jsonからデータ読み込み（型や表記ブレ自動補正）
+    fetch('./products.json')
       .then(response => response.json())
       .then(data => {
-        products = data;
+        if (Array.isArray(data)) {
+          data.forEach(item => {
+            const code = item.barcode || item.jan || item.code;
+            if (code) {
+              products[String(code).trim()] = item;
+            }
+          });
+        } else {
+          Object.keys(data).forEach(key => {
+            products[String(key).trim()] = data[key];
+          });
+        }
       })
-      .catch(err => console.error('json読み込みエラー:', err));
+      .catch(err => console.error('データ読込エラー:', err));
 
-    // 商品情報の表示処理
-    function displayProduct(janCode) {
-      const product = products.find(p => (p.jan || p.code) === janCode);
+    // 商品検索＆画面表示処理
+    function displayProduct(rawBarcode) {
+      const barcode = String(rawBarcode).trim();
 
-      document.getElementById('res-jan').textContent = janCode;
-
-      if (product) {
-        document.getElementById('res-name').textContent = product.name || '-';
-        document.getElementById('res-price').textContent = product.price ? `${product.price.toLocaleString()}円` : '-';
-        document.getElementById('res-master-price').textContent = product.masterPrice ? `${product.masterPrice.toLocaleString()}円` : '-';
+      if (products[barcode]) {
+        const item = products[barcode];
+        resultDiv.innerHTML = `
+          <div class="product-name">${item.name || '名称不明'}</div>
+          <div class="product-price">価格: ${item.price ? String(item.price).replace(/円/g, '').trim() + '円' : '未設定'}</div>
+          <p><small>JAN: ${barcode}</small></p>
+        `;
       } else {
-        document.getElementById('res-name').textContent = '未登録の商品';
-        document.getElementById('res-price').textContent = '-';
-        document.getElementById('res-master-price').textContent = '-';
+        resultDiv.innerHTML = `
+          <p style="color: #dc3545; font-weight: bold;">未登録の商品です</p>
+          <p><small>JAN: ${barcode}</small></p>
+        `;
       }
     }
 
-    // カメラとスキャナの初期化
-    const codeReader = new ZXing.BrowserMultiFormatReader();
-    codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
-      if (result) {
-        displayProduct(result.text);
+    // ① 手入力検索機能
+    function searchManualBarcode() {
+      const input = document.getElementById('manualBarcode');
+      const barcode = input.value.trim();
+      if (!barcode) {
+        alert('JANコードを入力してください');
+        return;
       }
-    }).catch(err => console.error('カメラ初期化エラー:', err));
-  </script>
+      displayProduct(barcode);
+    }
 
+    // ③ 読み取り精度向上設定（ZXing）
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+    const codeReader = new ZXing.BrowserMultiFormatReader(hints);
+    codeReader.timeBetweenDecodingAttempts = 200;
+
+    // カメラ起動とスキャン処理
+    codeReader.decodeFromConstraints({
+      video: { facingMode: "environment" }
+    }, 'video', (result, err) => {
+      if (result && !isPaused) {
+        const barcode = result.text;
+        
+        // ② 読み取り完了時のアクション（画面静止＆枠の緑点灯）
+        isPaused = true;
+        videoElement.pause();
+        interactiveDiv.classList.add('scan-success');
+
+        // 結果表示
+        displayProduct(barcode);
+
+        // 2.5秒後に自動再開
+        setTimeout(() => {
+          videoElement.play();
+          interactiveDiv.classList.remove('scan-success');
+          isPaused = false;
+        }, 2500);
+      }
+    }).catch(err => {
+      console.error('カメラ起動エラー:', err);
+    });
+  </script>
 </body>
 </html>
