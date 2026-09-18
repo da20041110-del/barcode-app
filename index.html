@@ -91,7 +91,9 @@
       box-sizing: border-box;
     }
     .product-name { font-size: 1.4em; font-weight: bold; color: #333; }
-    .product-price { font-size: 1.2em; color: #e44061; margin-top: 5px; }
+    .price-container { margin-top: 8px; display: flex; justify-content: center; gap: 15px; align-items: baseline; }
+    .product-price { font-size: 1.3em; font-weight: bold; color: #e44061; }
+    .product-master-price { font-size: 0.95em; color: #666; text-decoration: line-through; }
   </style>
 </head>
 <body>
@@ -106,7 +108,7 @@
 
   <!-- ① 手入力機能（テンキー自動起動） -->
   <div class="manual-input-container">
-    <input type="number" id="manualBarcode" placeholder="JANコードを直接入力" inputmode="numeric">
+    <input type="number" id="manualBarcode" placeholder="JANコードを直接入力" inputmode="numeric" onkeydown="if(event.key==='Enter') searchManualBarcode()">
     <button onclick="searchManualBarcode()">検索</button>
   </div>
   
@@ -122,7 +124,7 @@
     const interactiveDiv = document.getElementById('interactive');
     const resultDiv = document.getElementById('result');
 
-    // products.jsonからデータ読み込み（型や表記ブレ自動補正）
+    // products.jsonからデータ読み込み
     fetch('./products.json')
       .then(response => response.json())
       .then(data => {
@@ -147,9 +149,15 @@
 
       if (products[barcode]) {
         const item = products[barcode];
+        const salePrice = item.price ? Number(String(item.price).replace(/円/g, '')).toLocaleString() + '円' : '未設定';
+        const masterPrice = item.master_price ? Number(String(item.master_price).replace(/円/g, '')).toLocaleString() + '円' : null;
+
         resultDiv.innerHTML = `
           <div class="product-name">${item.name || '名称不明'}</div>
-          <div class="product-price">価格: ${item.price ? String(item.price).replace(/円/g, '').trim() + '円' : '未設定'}</div>
+          <div class="price-container">
+            <div class="product-price">販売価格: ${salePrice}</div>
+            ${masterPrice ? `<div class="product-master-price">(マスタ: ${masterPrice})</div>` : ''}
+          </div>
           <p><small>JAN: ${barcode}</small></p>
         `;
       } else {
@@ -160,7 +168,7 @@
       }
     }
 
-    // ① 手入力検索機能
+    // 手入力検索機能
     function searchManualBarcode() {
       const input = document.getElementById('manualBarcode');
       const barcode = input.value.trim();
@@ -171,7 +179,7 @@
       displayProduct(barcode);
     }
 
-    // ③ 読み取り精度向上設定（ZXing）
+    // ZXing 設定
     const hints = new Map();
     hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
 
@@ -185,15 +193,12 @@
       if (result && !isPaused) {
         const barcode = result.text;
         
-        // ② 読み取り完了時のアクション（画面静止＆枠の緑点灯）
         isPaused = true;
         videoElement.pause();
         interactiveDiv.classList.add('scan-success');
 
-        // 結果表示
         displayProduct(barcode);
 
-        // 2.5秒後に自動再開
         setTimeout(() => {
           videoElement.play();
           interactiveDiv.classList.remove('scan-success');
