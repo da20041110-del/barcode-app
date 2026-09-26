@@ -126,28 +126,18 @@
     fetch('./products.json')
       .then(response => response.json())
       .then(data => {
-        if (Array.isArray(data)) {
-          data.forEach(item => {
-            const code = item.barcode !== undefined ? item.barcode : (item.jan !== undefined ? item.jan : item.code);
-            if (code !== undefined && code !== null) {
-              // 【重要修正】どんな型で入っていても、必ず「前後の空白を消した文字列」に変換して登録します。
-              // これにより、下に追加された「新しい価格」が古いデータを確実に上書き（削除）します。
-              const cleanedCode = String(code).trim();
-              products[cleanedCode] = item; 
-            }
-          });
-        } else {
-          // JSONが { "490123...": { "name": "お茶" } } のようなオブジェクト形式だった場合
-          Object.keys(data).forEach(key => {
-            products[String(key).trim()] = data[key];
-          });
-        }
+        // 画像でいただいたオブジェクト形式（ { "1101...": { ... } } ）に完全対応
+        // 同じバーコードが複数追加された場合は、連想配列の仕様で後から読み込まれた値に自動で上書き（削除）されます。
+        Object.keys(data).forEach(key => {
+          const cleanedKey = String(key).trim();
+          products[cleanedKey] = data[key];
+        });
+        console.log("読み込み完了商品数:", Object.keys(products).length + "件");
       })
       .catch(err => console.error('データ読込エラー:', err));
 
     // 商品検索＆画面表示処理
     function displayProduct(rawBarcode) {
-      // 読み取ったコード側も確実に文字列・空白除去をします
       const barcode = String(rawBarcode).trim();
 
       if (products[barcode]) {
