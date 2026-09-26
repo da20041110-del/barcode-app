@@ -127,16 +127,17 @@
       .then(response => response.json())
       .then(data => {
         if (Array.isArray(data)) {
-          // 配列の上から順に処理をします。
-          // 同じバーコードが複数存在する場合、下に記述された「新しい価格」が古いデータを完全に上書きします。
           data.forEach(item => {
-            const code = item.barcode || item.jan || item.code;
-            if (code) {
+            const code = item.barcode !== undefined ? item.barcode : (item.jan !== undefined ? item.jan : item.code);
+            if (code !== undefined && code !== null) {
+              // 【重要修正】どんな型で入っていても、必ず「前後の空白を消した文字列」に変換して登録します。
+              // これにより、下に追加された「新しい価格」が古いデータを確実に上書き（削除）します。
               const cleanedCode = String(code).trim();
               products[cleanedCode] = item; 
             }
           });
         } else {
+          // JSONが { "490123...": { "name": "お茶" } } のようなオブジェクト形式だった場合
           Object.keys(data).forEach(key => {
             products[String(key).trim()] = data[key];
           });
@@ -146,9 +147,9 @@
 
     // 商品検索＆画面表示処理
     function displayProduct(rawBarcode) {
+      // 読み取ったコード側も確実に文字列・空白除去をします
       const barcode = String(rawBarcode).trim();
 
-      // 上書き後のクリーンな最新データのみを参照します
       if (products[barcode]) {
         const item = products[barcode];
         resultDiv.innerHTML = `
