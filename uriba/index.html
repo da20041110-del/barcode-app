@@ -69,7 +69,7 @@ footer{text-align:center;font-size:11px;color:#999189;padding:16px 10px 24px}
 <div class="map-card">
 <p class="map-note">売場全体の配置を確認できます。地図が小さい場合は、PDFを別画面で開いて拡大してください。</p>
 <iframe id="mapFrame" title="売場MAP" loading="lazy"></iframe>
-<div class="map-actions"><a class="secondary" id="openMap" href="./map.pdf" target="_blank" rel="noopener">PDFを別画面で開く</a><button class="secondary" id="backToScan" type="button">検索画面に戻る</button></div>
+<div class="map-actions"><a class="secondary" id="openMap" href="./MAP-cq6dfqm7w3fbinzhh3mqn15c4y.pdf" target="_blank" rel="noopener">PDFを別画面で開く</a><button class="secondary" id="backToScan" type="button">検索画面に戻る</button></div>
 <p id="mapStatus">売場MAPを読み込みます...</p>
 </div>
 </section>
@@ -108,7 +108,7 @@ async function loadMap(){
  const status=document.getElementById('mapStatus');if(mapObjectUrl){document.getElementById('mapFrame').src=mapObjectUrl;return}
  status.textContent='売場MAPを準備しています...';
  try{
-  const response=await fetch('./map.pdf');if(!response.ok)throw new Error('PDFファイルが見つかりません');
+  const response=await fetch('./MAP-cq6dfqm7w3fbinzhh3mqn15c4y.pdf');if(!response.ok)throw new Error('PDFファイルが見つかりません');
   const blob=await response.blob();mapObjectUrl=URL.createObjectURL(blob);
   document.getElementById('mapFrame').src=mapObjectUrl;document.getElementById('openMap').href=mapObjectUrl;
   status.textContent='売場MAPを表示しています';
