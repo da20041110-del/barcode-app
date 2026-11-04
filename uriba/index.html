@@ -4,55 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f7f5f2">
-<title>売場確認アプリ</title>
+<title>新店売場作成アプリ</title>
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <style>
 :root{--ink:#272522;--muted:#77716b;--line:#e6e1db;--paper:#fff;--bg:#f7f5f2;--accent:#9b7659;--accent-dark:#76563f}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif}
-header{padding:22px 16px 14px;text-align:center}
-h1{font-size:24px;letter-spacing:.08em;margin:0;font-weight:750}
-.subtitle{font-size:12px;color:var(--muted);margin-top:5px}
-.tabs{display:flex;gap:8px;max-width:560px;margin:0 auto 14px;padding:0 14px}
-.tab{flex:1;border:1px solid var(--line);background:#fff;color:var(--ink);padding:13px 8px;border-radius:12px;font-size:15px;font-weight:700}
-.tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
-main{max-width:560px;margin:0 auto;padding:0 14px 30px}
-.panel{display:none}.panel.active{display:block}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif}
+header{padding:22px 16px 14px;text-align:center}h1{font-size:23px;letter-spacing:.05em;margin:0;font-weight:750}.subtitle{font-size:12px;color:var(--muted);margin-top:5px}
+.tabs{display:flex;gap:7px;max-width:560px;margin:0 auto 14px;padding:0 14px}.tab{flex:1;border:1px solid var(--line);background:#fff;color:var(--ink);padding:12px 5px;border-radius:11px;font-size:14px;font-weight:700}.tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+main{max-width:560px;margin:0 auto;padding:0 14px 30px}.panel{display:none}.panel.active{display:block}
 .scan-card,.result-card,.map-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 3px 14px #2b20100a}
 .instruction{text-align:center;font-size:13px;color:var(--muted);margin:0 0 12px}
-#interactive{width:100%;height:270px;max-height:48vh;background:#171717;position:relative;overflow:hidden;border-radius:12px;border:2px solid #d6d0c9}
-#video{width:100%;height:100%;object-fit:cover}
-.scan-guide{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:84%;height:38%;border:2px dashed #ffffffc9;border-radius:7px;pointer-events:none}
-.scan-line{position:absolute;top:50%;left:10%;width:80%;height:2px;background:#e84a4a99;pointer-events:none}
-#interactive.scan-success{border-color:#538c64;box-shadow:0 0 0 3px #538c6440}
-.manual{display:flex;gap:8px;margin-top:12px}
-.manual input{min-width:0;flex:1;padding:13px 12px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#fff}
-button{font:inherit;cursor:pointer}
-.primary{border:0;background:var(--accent);color:#fff;padding:12px 17px;border-radius:10px;font-weight:700}
-.primary:active{background:var(--accent-dark)}
-.secondary{border:1px solid var(--line);background:#fff;color:var(--ink);padding:11px 14px;border-radius:10px;font-weight:650}
+#interactive{width:100%;height:270px;max-height:48vh;background:#171717;position:relative;overflow:hidden;border-radius:12px;border:2px solid #d6d0c9}#video{width:100%;height:100%;object-fit:cover}
+.scan-guide{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:84%;height:38%;border:2px dashed #ffffffc9;border-radius:7px;pointer-events:none}.scan-line{position:absolute;top:50%;left:10%;width:80%;height:2px;background:#e84a4a99;pointer-events:none}#interactive.scan-success{border-color:#538c64;box-shadow:0 0 0 3px #5386440}
+.manual input{width:100%;padding:14px 12px;border:1px solid var(--line);border-radius:10px;font-size:20px;letter-spacing:.08em;background:#fff;text-align:center}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.key{border:1px solid var(--line);background:#fff;border-radius:11px;padding:14px 8px;font-size:22px;font-weight:700;color:var(--ink);box-shadow:0 2px 0 #e7e1da}.key:active{background:#eee8e1;transform:translateY(1px)}.key.clear{font-size:15px;background:#f4e9e4;color:#8b4032;border-color:#e8d1c8}.key.delete{font-size:18px;background:#f3f1ee}
+.primary{width:100%;border:0;background:var(--accent);color:#fff;padding:14px 17px;border-radius:10px;font-weight:700;font-size:16px;margin-top:12px}.primary:active{background:var(--accent-dark)}
 .status{font-size:12px;color:var(--muted);text-align:center;min-height:18px;margin:10px 0 0}
-.result-card{margin-top:14px;min-height:124px}
-.result-empty{text-align:center;color:var(--muted);font-size:14px;padding:24px 6px}
-.product-name{font-size:17px;line-height:1.55;font-weight:750;overflow-wrap:anywhere}
-.jan{font-size:12px;color:var(--muted);margin-top:8px}
-.floor-title{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.05em;margin-top:14px}
-.floor-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.floor-chip{display:inline-flex;align-items:center;justify-content:center;min-width:56px;padding:9px 14px;background:#f1e8df;color:#5b412f;border:1px solid #e6d5c6;border-radius:10px;font-size:20px;font-weight:800}
-.notfound{color:#a33d36;font-weight:700;text-align:center;padding:18px 4px}
-.map-card{padding:12px}
-.map-note{font-size:13px;color:var(--muted);line-height:1.65;margin:0 0 12px}
-#mapFrame{width:100%;height:70vh;min-height:440px;border:1px solid var(--line);border-radius:10px;background:#f3f0ec}
-.map-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-#mapStatus{font-size:12px;color:var(--muted);margin-top:10px}
+.result-card{margin-top:14px;min-height:124px;scroll-margin-top:14px}.result-empty{text-align:center;color:var(--muted);font-size:14px;padding:24px 6px}.product-name{font-size:17px;line-height:1.55;font-weight:750;overflow-wrap:anywhere}.jan{font-size:12px;color:var(--muted);margin-top:8px}.floor-title{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.05em;margin-top:14px}.floor-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.floor-chip{display:inline-flex;align-items:center;justify-content:center;min-width:56px;padding:9px 14px;background:#f1e8df;color:#5b412f;border:1px solid #e6d5c6;border-radius:10px;font-size:20px;font-weight:800}.notfound{color:#a33d36;font-weight:700;text-align:center;padding:18px 4px}
+.map-card{padding:12px}.map-note{font-size:13px;color:var(--muted);line-height:1.65;margin:0 0 12px}#mapFrame{width:100%;height:70vh;min-height:440px;border:1px solid var(--line);border-radius:10px;background:#f3f0ec}.map-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.secondary{border:1px solid var(--line);background:#fff;color:var(--ink);padding:11px 14px;border-radius:10px;font-weight:650;text-decoration:none}#mapStatus{font-size:12px;color:var(--muted);margin-top:10px}
 footer{text-align:center;font-size:11px;color:#999189;padding:16px 10px 24px}
-@media(max-width:380px){#interactive{height:230px}.floor-chip{font-size:18px;min-width:50px}}
+@media(max-width:380px){#interactive{height:230px}.floor-chip{font-size:18px;min-width:50px}.key{padding:12px 6px}}
 </style>
 </head>
 <body>
-<header><h1>売場確認アプリ</h1><div class="subtitle">JANコードから売場NOを確認</div></header>
+<header><h1>新店売場作成アプリ</h1><div class="subtitle">JANコードから売場NOを確認</div></header>
 <nav class="tabs" aria-label="画面切替">
-<button class="tab active" id="scanTab" type="button">バーコード検索</button>
+<button class="tab active" id="scanTab" type="button">バーコード</button>
+<button class="tab" id="manualTab" type="button">手入力</button>
 <button class="tab" id="mapTab" type="button">売場MAP</button>
 </nav>
 <main>
@@ -60,66 +38,88 @@ footer{text-align:center;font-size:11px;color:#999189;padding:16px 10px 24px}
 <div class="scan-card">
 <p class="instruction">バーコードを白い枠内に合わせてください</p>
 <div id="interactive"><video id="video" playsinline muted></video><div class="scan-guide"></div><div class="scan-line"></div></div>
-<div class="manual"><input id="manualBarcode" type="text" inputmode="numeric" autocomplete="off" placeholder="JANコードを直接入力"><button class="primary" id="searchBtn" type="button">検索</button></div>
 <p class="status" id="loadStatus">商品データを読み込み中...</p>
 </div>
-<div class="result-card" id="result"><div class="result-empty">バーコードを読み取るか、JANコードを入力してください</div></div>
+<div class="result-card" id="scanResult"><div class="result-empty">バーコードを読み取ってください</div></div>
 </section>
-<section class="panel" id="mapPanel">
-<div class="map-card">
+<section class="panel" id="manualPanel">
+<div class="scan-card">
+<p class="instruction">JANコードを入力してください</p>
+<div class="manual"><input id="manualBarcode" type="text" inputmode="none" autocomplete="off" placeholder="JANコード"></div>
+<div class="keypad" id="keypad">
+<button class="key" data-key="1">1</button><button class="key" data-key="2">2</button><button class="key" data-key="3">3</button>
+<button class="key" data-key="4">4</button><button class="key" data-key="5">5</button><button class="key" data-key="6">6</button>
+<button class="key" data-key="7">7</button><button class="key" data-key="8">8</button><button class="key" data-key="9">9</button>
+<button class="key clear" id="clearBtn">クリア</button><button class="key" data-key="0">0</button><button class="key delete" id="deleteBtn">⌫</button>
+</div>
+<button class="primary" id="manualSearchBtn" type="button">検索</button>
+<p class="status">「クリア」で入力したJANコードをすべて消去できます</p>
+</div>
+<div class="result-card" id="manualResult"><div class="result-empty">JANコードを入力して検索してください</div></div>
+</section>
+<section class="panel" id="mapPanel"><div class="map-card">
 <p class="map-note">売場全体の配置を確認できます。地図が小さい場合は、PDFを別画面で開いて拡大してください。</p>
 <iframe id="mapFrame" title="売場MAP" loading="lazy"></iframe>
-<div class="map-actions"><a class="secondary" id="openMap" href="./MAP-cq6dfqm7w3fbinzhh3mqn15c4y.pdf" target="_blank" rel="noopener">PDFを別画面で開く</a><button class="secondary" id="backToScan" type="button">検索画面に戻る</button></div>
+<div class="map-actions"><a class="secondary" id="openMap" href="./MAP-cq6dfqm7w3fbinzhh3mqn15c4y.pdf" target="_blank" rel="noopener">PDFを別画面で開く</a></div>
 <p id="mapStatus">売場MAPを読み込みます...</p>
-</div>
-</section>
+</div></section>
 </main>
-<footer>売場確認アプリ</footer>
+<footer>新店売場作成アプリ</footer>
 <script>
-let products={};let loaded=false;let isPaused=false;let mapObjectUrl=null;
-const video=document.getElementById('video'),cameraBox=document.getElementById('interactive'),result=document.getElementById('result');
-const loadStatus=document.getElementById('loadStatus');
+let products={};let loaded=false;let isPaused=false;let mapObjectUrl=null;let scannerActive=false;
+const video=document.getElementById('video'),cameraBox=document.getElementById('interactive'),loadStatus=document.getElementById('loadStatus');
+const scanResult=document.getElementById('scanResult'),manualResult=document.getElementById('manualResult');
 fetch('./products.json').then(r=>{if(!r.ok)throw new Error('商品データを読み込めません');return r.json()}).then(d=>{products=d;loaded=true;loadStatus.textContent='商品データ '+Object.keys(products).length.toLocaleString()+'件 読み込み完了'}).catch(e=>{loadStatus.textContent='データ読込エラー：ページを再読み込みしてください';console.error(e)});
-function displayProduct(value){
+function scrollToResult(el){requestAnimationFrame(()=>el.scrollIntoView({behavior:'smooth',block:'start'}))}
+function displayProduct(value,target){
  const jan=String(value||'').replace(/\D/g,'');
- if(!jan){result.innerHTML='<div class="result-empty">JANコードを入力してください</div>';return}
- if(!loaded){result.innerHTML='<div class="result-empty">商品データを読み込み中です。少し待ってから再検索してください。</div>';return}
+ if(!jan){target.innerHTML='<div class="result-empty">JANコードを入力してください</div>';scrollToResult(target);return}
+ if(!loaded){target.innerHTML='<div class="result-empty">商品データを読み込み中です。少し待ってから再検索してください。</div>';scrollToResult(target);return}
  const item=products[jan];
- if(!item){result.innerHTML='<div class="notfound">登録されていないJANコードです</div><div class="jan">JAN：'+jan+'</div>';return}
+ if(!item){target.innerHTML='<div class="notfound">登録されていないJANコードです</div><div class="jan">JAN：'+jan+'</div>';scrollToResult(target);return}
  const name=document.createElement('div');name.className='product-name';name.textContent=item.name||'商品名未登録';
  const janLine=document.createElement('div');janLine.className='jan';janLine.textContent='JAN：'+jan;
  const title=document.createElement('div');title.className='floor-title';title.textContent='売場NO';
  const floors=document.createElement('div');floors.className='floor-list';
  (item.salesFloorNos||[]).forEach(no=>{const chip=document.createElement('span');chip.className='floor-chip';chip.textContent=no;floors.appendChild(chip)});
- result.replaceChildren(name,janLine,title,floors);
+ target.replaceChildren(name,janLine,title,floors);scrollToResult(target);
 }
-function searchManual(){displayProduct(document.getElementById('manualBarcode').value)}
-document.getElementById('searchBtn').addEventListener('click',searchManual);
-document.getElementById('manualBarcode').addEventListener('keydown',e=>{if(e.key==='Enter')searchManual()});
+function stopScanner(){if(window.codeReader){try{codeReader.reset()}catch(e){console.warn(e)}}scannerActive=false;isPaused=false;video.pause();video.srcObject=null}
+function startScanner(){
+ if(scannerActive||!window.ZXing||!document.getElementById('scanPanel').classList.contains('active'))return;
+ scannerActive=true;
+ codeReader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}}},'video',(scan,err)=>{
+  if(scan&&!isPaused&&document.getElementById('scanPanel').classList.contains('active')){
+   isPaused=true;video.pause();cameraBox.classList.add('scan-success');displayProduct(scan.text,scanResult);
+   setTimeout(()=>{if(document.getElementById('scanPanel').classList.contains('active')){video.play().catch(()=>{});cameraBox.classList.remove('scan-success');isPaused=false}else stopScanner()},1800);
+  }
+ }).catch(e=>{scannerActive=false;loadStatus.textContent='カメラを起動できません。Safariのカメラ許可を確認してください。';console.error(e)});
+}
+const hints=new Map();if(window.ZXing){hints.set(ZXing.DecodeHintType.TRY_HARDER,true);window.codeReader=new ZXing.BrowserMultiFormatReader(hints);codeReader.timeBetweenDecodingAttempts=180}
 function showPanel(which){
- const map=which==='map';document.getElementById('scanPanel').classList.toggle('active',!map);document.getElementById('mapPanel').classList.toggle('active',map);
- document.getElementById('scanTab').classList.toggle('active',!map);document.getElementById('mapTab').classList.toggle('active',map);
- if(map)loadMap();
+ stopScanner();
+ ['scan','manual','map'].forEach(name=>{
+  document.getElementById(name+'Panel').classList.toggle('active',name===which);
+  document.getElementById(name+'Tab').classList.toggle('active',name===which);
+ });
+ if(which==='scan')startScanner();
+ if(which==='map')loadMap();
+ window.scrollTo({top:0,behavior:'smooth'});
 }
 document.getElementById('scanTab').addEventListener('click',()=>showPanel('scan'));
+document.getElementById('manualTab').addEventListener('click',()=>showPanel('manual'));
 document.getElementById('mapTab').addEventListener('click',()=>showPanel('map'));
-document.getElementById('backToScan').addEventListener('click',()=>showPanel('scan'));
+document.getElementById('manualSearchBtn').addEventListener('click',()=>displayProduct(document.getElementById('manualBarcode').value,manualResult));
+document.getElementById('manualBarcode').addEventListener('keydown',e=>{if(e.key==='Enter')displayProduct(e.target.value,manualResult)});
+document.querySelectorAll('[data-key]').forEach(btn=>btn.addEventListener('click',()=>{const input=document.getElementById('manualBarcode');input.value+=btn.dataset.key;input.focus()}));
+document.getElementById('clearBtn').addEventListener('click',()=>{document.getElementById('manualBarcode').value='';manualResult.innerHTML='<div class="result-empty">JANコードを入力して検索してください</div>';document.getElementById('manualBarcode').focus()});
+document.getElementById('deleteBtn').addEventListener('click',()=>{const input=document.getElementById('manualBarcode');input.value=input.value.slice(0,-1);input.focus()});
 async function loadMap(){
  const status=document.getElementById('mapStatus');if(mapObjectUrl){document.getElementById('mapFrame').src=mapObjectUrl;return}
  status.textContent='売場MAPを準備しています...';
- try{
-  const response=await fetch('./MAP-cq6dfqm7w3fbinzhh3mqn15c4y.pdf');if(!response.ok)throw new Error('PDFファイルが見つかりません');
-  const blob=await response.blob();mapObjectUrl=URL.createObjectURL(blob);
-  document.getElementById('mapFrame').src=mapObjectUrl;document.getElementById('openMap').href=mapObjectUrl;
-  status.textContent='売場MAPを表示しています';
- }catch(e){status.textContent='MAPを読み込めませんでした。PDFファイルの配置を確認してください。';console.error(e)}
+ try{const response=await fetch('./MAP-cq6dfqm7w3fbinzhh3mqn15c4y.pdf');if(!response.ok)throw new Error('PDFファイルが見つかりません');const blob=await response.blob();mapObjectUrl=URL.createObjectURL(blob);document.getElementById('mapFrame').src=mapObjectUrl;document.getElementById('openMap').href=mapObjectUrl;status.textContent='売場MAPを表示しています'}
+ catch(e){status.textContent='MAPを読み込めませんでした。PDFファイルの配置を確認してください。';console.error(e)}
 }
-if(window.ZXing){
- const hints=new Map();hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
- const reader=new ZXing.BrowserMultiFormatReader(hints);reader.timeBetweenDecodingAttempts=180;
- reader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}}},'video',(scan,err)=>{
-  if(scan&&!isPaused){isPaused=true;video.pause();cameraBox.classList.add('scan-success');displayProduct(scan.text);setTimeout(()=>{video.play().catch(()=>{});cameraBox.classList.remove('scan-success');isPaused=false},1800)}
- }).catch(e=>{loadStatus.textContent='カメラを起動できません。Safariのカメラ許可を確認してください。';console.error(e)});
-}else{loadStatus.textContent='バーコード読取ライブラリを読み込めませんでした'}
+startScanner();
 </script>
 </body></html>
